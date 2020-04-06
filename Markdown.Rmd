@@ -2,8 +2,9 @@
 title: "Markdown"
 author: "DAR"
 date: "06/04/2020"
-output: github_document
-  
+output:
+  html_document:
+    df_print: paged
 ---
 
 This is a simple sentence in English.
@@ -14,7 +15,7 @@ This is a simple sentence in English.
 
 library(circlize)
 
-# uSE THIS TO LOAD 1 dataset
+# USE THIS TO LOAD 1 dataset
 
 ROOTDIR <- "C:\\Users\\Diego\\Desktop\\NDPH\\Nested case-control study\\"
 PREFIX <- "LR"
@@ -97,7 +98,7 @@ legend <- paste("Derived from logistic regression models adjusted for age, sex, 
 
 # png(paste("",ROOTDIR,"tables and figures\\" , file.out ," " , GROUP ," ", format(Sys.time(), " %Y-%m-%d"), " .png", sep=""), height=6000,width=6000, bg = "white")
 
-png(paste("", file.out ," " , GROUP ," ", format(Sys.time(), " %Y-%m-%d"), " .png", sep=""), height=6000,width=6000, bg = "white")
+png("1.png", height=6000,width=6000, bg = "white")
 
 par(xpd = NA, oma = rep(29,4))
 circos.par("track.height" = 0.6, 
@@ -271,3 +272,5 @@ dev.off()
 
 ```
 
+
+![Figure 1. ](1.png)
