@@ -95,9 +95,9 @@ labs4 <- c("VLDL-D", "LDL-D", "HDL-D", "Apo-AI", "Apo-B", "Apo-B/Apo-AI",
 legend <- paste("Derived from logistic regression models adjusted for age, sex, district of residence, educational level, and NMR experiment batch number.")
 
 
+# png(paste("",ROOTDIR,"tables and figures\\" , file.out ," " , GROUP ," ", format(Sys.time(), " %Y-%m-%d"), " .png", sep=""), height=6000,width=6000, bg = "white")
 
-
-png(paste("",ROOTDIR,"tables and figures\\" , file.out ," " , GROUP ," ", format(Sys.time(), " %Y-%m-%d"), " .png", sep=""), height=6000,width=6000, bg = "white")
+png(paste("", file.out ," " , GROUP ," ", format(Sys.time(), " %Y-%m-%d"), " .png", sep=""), height=6000,width=6000, bg = "white")
 
 par(xpd = NA, oma = rep(29,4))
 circos.par("track.height" = 0.6, 
