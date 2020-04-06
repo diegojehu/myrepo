@@ -10,7 +10,7 @@ This is a simple sentence in English.
 
 ```{r}
 
-install.packages("circlize")
+
 
 library(circlize)
 

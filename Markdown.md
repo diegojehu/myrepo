@@ -3,33 +3,459 @@ Markdown
 DAR
 06/04/2020
 
-## R Markdown
-
-This is an R Markdown document. Markdown is a simple formatting syntax
-for authoring HTML, PDF, and MS Word documents. For more details on
-using R Markdown see <http://rmarkdown.rstudio.com>.
-
-When you click the **Knit** button a document will be generated that
-includes both content as well as the output of any embedded R code
-chunks within the document. You can embed an R code chunk like this:
+This is a simple sentence in English.
 
 ``` r
-summary(cars)
+library(circlize)
 ```
 
-    ##      speed           dist       
-    ##  Min.   : 4.0   Min.   :  2.00  
-    ##  1st Qu.:12.0   1st Qu.: 26.00  
-    ##  Median :15.0   Median : 36.00  
-    ##  Mean   :15.4   Mean   : 42.98  
-    ##  3rd Qu.:19.0   3rd Qu.: 56.00  
-    ##  Max.   :25.0   Max.   :120.00
+    ## ========================================
+    ## circlize version 0.4.8
+    ## CRAN page: https://cran.r-project.org/package=circlize
+    ## Github page: https://github.com/jokergoo/circlize
+    ## Documentation: http://jokergoo.github.io/circlize_book/book/
+    ## 
+    ## If you use it in published research, please cite:
+    ## Gu, Z. circlize implements and enhances circular visualization 
+    ##   in R. Bioinformatics 2014.
+    ## ========================================
 
-## Including Plots
+``` r
+# uSE THIS TO LOAD 1 dataset
 
-You can also embed plots, for example:
+ROOTDIR <- "C:\\Users\\Diego\\Desktop\\NDPH\\Nested case-control study\\"
+PREFIX <- "LR"
+OUTCOME <- "PRDM"
+GROUP <- "ALL"
+file.out <- "PRDM"
+fact <- "mets"
 
-![](Markdown_files/figure-gfm/pressure-1.png)<!-- -->
+datasub <<- read.csv(paste("", ROOTDIR ,"data\\",PREFIX,"_",OUTCOME,"_",GROUP,".csv", sep=""), skip=0, header=TRUE)
+datasub$RawP <- pchisq(datasub$WaldChiSq, 1, lower.tail=FALSE)
+datasub$AdjP <- p.adjust(datasub$RawP, method = "fdr")
 
-Note that the `echo = FALSE` parameter was added to the code chunk to
-prevent printing of the R code that generated the plot.
+datasub$Sig<-NA
+datasub$Sig[datasub$AdjP< 0.05] <- 1
+datasub$Sig[datasub$AdjP>= 0.05] <- 0
+
+datasub$RR_1_s <- datasub$RR_1
+datasub$RR_2_s <- datasub$RR_2
+
+datasub$RR_1_s[datasub$Sig==0] <- 1
+datasub$RR_2_s[datasub$Sig==0] <- 1
+
+datasub$RR_1[datasub$Sig==1] <- 1
+datasub$RR_2[datasub$Sig==1] <- 1
+
+
+len.data <<-  as.numeric(dim(datasub)[1])
+
+YLIM <- c(log(0.6), log(1.7))
+YCUTS <- c(log(0.6), log(0.75), log(1), log(1.3), log(1.7))
+YCUTS.LABS <- as.character(exp(YCUTS))
+
+#YCUTS.LABS <- c("-40%", "-20%", "0%", "30%", "60%")
+
+YMAX <- exp(max(YLIM))
+YMIN <- exp(min(YLIM))
+
+
+ylab1 <- exp(log(YMAX)+log(YMAX)*0.05)
+ylab2 <- exp(log(YMAX)+log(YMAX)*0.3)
+ylab3 <- exp(log(YMAX)+log(YMAX)*0.7)
+ylab3b <- exp(log(YMAX)+log(YMAX)*0.55)
+
+ylabsig <- (0.39)
+
+CEX <- (8)
+
+ADJ <- 0.01
+
+datasub$RR_1[datasub$RR_1<=YMIN] <- YMIN+YMIN*ADJ
+datasub$RR_2[datasub$RR_2>=YMAX] <- YMAX-YMAX*ADJ
+
+datasub$RR_1_s[datasub$RR_1_s<=YMIN] <- YMIN+YMIN*ADJ
+datasub$RR_2_s[datasub$RR_2_s>=YMAX] <- YMAX-YMAX*ADJ
+
+
+datasub$Estimate[datasub$Estimate<=log(YMIN)] <- log(YMIN)+log(YMIN)*ADJ
+datasub$Estimate[datasub$Estimate>=log(YMAX)] <- log(YMAX)-log(YMAX)*ADJ
+
+
+#datasub$Sig[datasub$AdjP>= 0.05] <- 0
+
+
+XLIM <- c(min(as.numeric(datasub$id_name_s)), max(as.numeric(datasub$id_name_s)))
+
+labs1 <- c(rep (c("XXL", "XL", "L", "M", "S", "XS", "IDL", "L", "M", "S", "XL", "L", "M", "S"), 7))
+
+labs4 <- c("VLDL-D", "LDL-D", "HDL-D", "Apo-AI", "Apo-B", "Apo-B/Apo-AI",
+           "PUFA", "MUFA", "SFA", "DHA", "LA", "FAw3", "FAw6", "TotFA",
+           "PUFA/FA", "MUFA/FA", "SFA/FA", "DHA/FA", "LA/FA", "FAw3/FA", "FAw6/FA",
+           "TotCho", "PC", "SM",
+           "Lac", "Cit", "Glc",
+           "Ala", "Gln", "His", "Ile", "Leu", "Val", "Phe", "Tyr",
+           "Ace", "AcAce", "bOHBut",
+           "Alb", "Crea", "Glyc-A")
+
+
+legend <- paste("Derived from logistic regression models adjusted for age, sex, district of residence, educational level, and NMR experiment batch number.")
+
+
+
+
+png(paste("",ROOTDIR,"tables and figures\\" , file.out ," " , GROUP ," ", format(Sys.time(), " %Y-%m-%d"), " .png", sep=""), height=6000,width=6000, bg = "white")
+
+par(xpd = NA, oma = rep(29,4))
+circos.par("track.height" = 0.6, 
+           cell.padding = c(0, 0, 0, 0),
+           gap.degree = 45,
+           start.degree = 90,
+           unit.circle.segments=50000) # We set a global parameter track.height to 0.1 by the option function circis.par() so that all tracks which will be added have a default height of 0.1. The circle used by circlize always has a radius of 1, so a height of 0.1 means 10% of the circle radius 
+
+
+circos.initialize(factors = fact, xlim = c(0,len.data))
+
+circos.track(factors = fact, ylim = YLIM, bg.border = NA)
+
+# Draw highlights for sections of interest here
+pos1 = circlize(c(0.5, 6.5), c(min(YLIM), max(YLIM)), sector.index = "mets", track.index = 1)
+draw.sector(pos1[1, "theta"], pos1[2, "theta"], pos1[1, "rou"], pos1[2, "rou"], clock.wise = TRUE, col = "#CCCCCC56", border = NA) 
+
+pos2 = circlize(c(10.5, 14.5), c(min(YLIM), max(YLIM)), sector.index = "mets", track.index = 1)
+draw.sector(pos2[1, "theta"], pos2[2, "theta"], pos2[1, "rou"], pos2[2, "rou"], clock.wise = TRUE, col = "#CCCCCC56", border = NA) 
+
+pos3 = circlize(c(20.5, 24.5), c(min(YLIM), max(YLIM)), sector.index = "mets", track.index = 1)
+draw.sector(pos3[1, "theta"], pos3[2, "theta"], pos3[1, "rou"], pos3[2, "rou"], clock.wise = TRUE, col = "#CCCCCC56", border = NA) 
+
+pos4 = circlize(c(28.5, 34.5), c(min(YLIM), max(YLIM)), sector.index = "mets", track.index = 1)
+draw.sector(pos4[1, "theta"], pos4[2, "theta"], pos4[1, "rou"], pos4[2, "rou"], clock.wise = TRUE, col = "#CCCCCC56", border = NA) 
+
+pos5 = circlize(c(38.5, 42.5), c(min(YLIM), max(YLIM)), sector.index = "mets", track.index = 1)
+draw.sector(pos5[1, "theta"], pos5[2, "theta"], pos5[1, "rou"], pos5[2, "rou"], clock.wise = TRUE, col = "#CCCCCC56", border = NA) 
+
+pos6 = circlize(c(48.5, 52.5), c(min(YLIM), max(YLIM)), sector.index = "mets", track.index = 1)
+draw.sector(pos6[1, "theta"], pos6[2, "theta"], pos6[1, "rou"], pos6[2, "rou"], clock.wise = TRUE, col = "#CCCCCC56", border = NA) 
+
+pos7 = circlize(c(56.5, 62.5), c(min(YLIM), max(YLIM)), sector.index = "mets", track.index = 1)
+draw.sector(pos7[1, "theta"], pos7[2, "theta"], pos7[1, "rou"], pos7[2, "rou"], clock.wise = TRUE, col = "#CCCCCC56", border = NA) 
+
+pos8 = circlize(c(66.5, 70.5), c(min(YLIM), max(YLIM)), sector.index = "mets", track.index = 1)
+draw.sector(pos8[1, "theta"], pos8[2, "theta"], pos8[1, "rou"], pos8[2, "rou"], clock.wise = TRUE, col = "#CCCCCC56", border = NA) 
+
+pos9 = circlize(c(76.5, 80.5), c(min(YLIM), max(YLIM)), sector.index = "mets", track.index = 1)
+draw.sector(pos9[1, "theta"], pos9[2, "theta"], pos9[1, "rou"], pos9[2, "rou"], clock.wise = TRUE, col = "#CCCCCC56", border = NA) 
+
+pos10 = circlize(c(84.5, 90.5), c(min(YLIM), max(YLIM)), sector.index = "mets", track.index = 1)
+draw.sector(pos10[1, "theta"], pos10[2, "theta"], pos10[1, "rou"], pos10[2, "rou"], clock.wise = TRUE, col = "#CCCCCC56", border = NA) 
+
+pos11 = circlize(c(94.5, 98.5), c(min(YLIM), max(YLIM)), sector.index = "mets", track.index = 1)
+draw.sector(pos11[1, "theta"], pos11[2, "theta"], pos11[1, "rou"], pos11[2, "rou"], clock.wise = TRUE, col = "#CCCCCC56", border = NA) 
+
+pos12 = circlize(c(104.5, 112.5), c(min(YLIM), max(YLIM)), sector.index = "mets", track.index = 1)
+draw.sector(pos12[1, "theta"], pos12[2, "theta"], pos12[1, "rou"], pos12[2, "rou"], clock.wise = TRUE, col = "#CCCCCC56", border = NA) 
+
+pos13 = circlize(c(119.5, 122.5), c(min(YLIM), max(YLIM)), sector.index = "mets", track.index = 1)
+draw.sector(pos13[1, "theta"], pos13[2, "theta"], pos13[1, "rou"], pos13[2, "rou"], clock.wise = TRUE, col = "#CCCCCC56", border = NA) 
+
+pos14 = circlize(c(125.5, 133.5), c(min(YLIM), max(YLIM)), sector.index = "mets", track.index = 1)
+draw.sector(pos14[1, "theta"], pos14[2, "theta"], pos14[1, "rou"], pos14[2, "rou"], clock.wise = TRUE, col = "#CCCCCC56", border = NA) 
+
+pos15 = circlize(c(136.5, 139.5), c(min(YLIM), max(YLIM)), sector.index = "mets", track.index = 1)
+draw.sector(pos15[1, "theta"], pos15[2, "theta"], pos15[1, "rou"], pos15[2, "rou"], clock.wise = TRUE, col = "#CCCCCC56", border = NA) 
+
+circos.track(track.index = 1, bg.border = "white", factors = fact, ylim = YLIM
+             , panel.fun = function(x,y){
+               
+               # Start of plot line
+               circos.segments(x0=min(XLIM)-0.5, y0=max(YLIM), x1=min(XLIM)-0.5, y1=min(YLIM), col = "black", lwd=2)
+               # End of plot line
+               circos.segments(x0=max(XLIM)+0.5, y0=max(YLIM), x1=max(XLIM)+0.5, y1=min(YLIM), col = "black", lwd=2)
+               
+               # Outer black line
+               circos.segments(x0=min(XLIM)-.75, y0=max(YLIM), x1=max(XLIM)+0.5, y1=max(YLIM), col = "black", lwd=2)
+               # Inner black line
+               circos.segments(x0=min(XLIM)-.75, y0=min(YLIM), x1=max(XLIM)+0.5, y1=min(YLIM), col = "black", lwd=2)
+               
+               # Null Hypothesis Line (ie RR = 1) black line
+               circos.segments(x0=min(XLIM)-.75, y0=0, x1=max(XLIM)+0.5, y1=0, col = "black", lwd=2)
+               
+               circos.segments(x0=min(XLIM)-.75, y0=(YCUTS[2]), x1=max(XLIM)+0.5, y1=(YCUTS[2]), col = "gray75", lwd=2)
+               circos.segments(x0=min(XLIM)-.75, y0=(YCUTS[4]), x1=max(XLIM)+0.5, y1=(YCUTS[4]), col = "gray75", lwd=2)
+               
+               
+               # # Bars
+               circos.rect(xleft=(as.numeric(datasub$id_name_s)-.35), xright=(as.numeric(datasub$id_name_s)+.35), ytop=log(as.numeric(datasub$RR_1_s)), ybottom = log(1), col = "#0066CCCC" , lwd=2)
+               circos.rect(xleft=(as.numeric(datasub$id_name_s)-.35), xright=(as.numeric(datasub$id_name_s)+.35), ytop=log(as.numeric(datasub$RR_2_s)), ybottom = log(1), col = "#CC0000CC" , lwd=2)
+               
+               circos.rect(xleft=(as.numeric(datasub$id_name_s)-.35), xright=(as.numeric(datasub$id_name_s)+.35), ytop=log(as.numeric(datasub$RR_1)), ybottom = log(1), col = "#0066CC40" , lwd=2)
+               circos.rect(xleft=(as.numeric(datasub$id_name_s)-.35), xright=(as.numeric(datasub$id_name_s)+.35), ytop=log(as.numeric(datasub$RR_2)), ybottom = log(1), col = "#CC000040" , lwd=2)
+               
+               
+               # 
+               # Confidence intervals
+               circos.rect(xleft=(as.numeric(datasub$id_name_s)), xright=(as.numeric(datasub$id_name_s)), ytop=(as.numeric(datasub$Estimate)+(1.95*as.numeric(datasub$StdErr))), ybottom = (as.numeric(datasub$Estimate)-(1.95*(as.numeric(datasub$StdErr)))), col = "#262626" , lwd=2)
+               
+               # Blobs 
+               # circos.rect(xleft=(as.numeric(datasub$id_name_s)-.15), xright=(as.numeric(datasub$id_name_s)+.15), ytop=log(as.numeric(datasub$RR.x)), ybottom = log(as.numeric(datasub$RR.y)), col = "grey75" , lwd=0.0001)
+               
+               # # BLUE = WITHOUT DIABETES
+               # circos.rect  (xleft=(as.numeric(datasub$id_name_s)-.20), xright=(as.numeric(datasub$id_name_s)-.20), ytop=(as.numeric(datasub$Estimate.x)+(1.95*as.numeric(datasub$StdErr.x))), ybottom = (as.numeric(datasub$Estimate.x)-(1.95*(as.numeric(datasub$StdErr.x)))), col = "#0066CC40" , lwd=2)
+               # circos.points(x=as.numeric(datasub$id_name_s)-.20, y=log(as.numeric(datasub$RR.x)), pch = 16, col = "#0066CCE6", cex = 7)
+               # 
+               # # BLUE = WITHOUT DIABETES
+               # circos.rect  (xleft=(as.numeric(datasub$id_name_s)+.20), xright=(as.numeric(datasub$id_name_s)+.20), ytop=(as.numeric(datasub$Estimate.y)+(1.95*as.numeric(datasub$StdErr.y))), ybottom = (as.numeric(datasub$Estimate.y)-(1.95*(as.numeric(datasub$StdErr.y)))), col = "#CC000040" , lwd=2)
+               # circos.points(x=as.numeric(datasub$id_name_s)+.20, y=log(as.numeric(datasub$RR.y)), pch = 16, col = "#CC0000E6", cex = 7)
+               # 
+               
+               VLDL.shift <- 2 
+               LDL.shift <- 1.5
+               HDL.shift <- 1.5
+               
+               circos.yaxis(at=YCUTS, labels = YCUTS.LABS, labels.cex = CEX*1, tick = FALSE, col = "white")
+               
+               circos.text(x=0.5+5, y=log(ylab3), facing = "bending.inside", niceFacing = TRUE, labels = "Lipoprotein particles", cex = CEX*0.9, adj=0, font=2)
+               circos.text(x=0.5+VLDL.shift, y=log(ylab2), facing = "bending.inside", niceFacing = TRUE, labels = "VLDL", cex = CEX*0.8, adj=0, font=2)
+               circos.text(x=6.5+LDL.shift, y=log(ylab2), facing = "bending.inside", niceFacing = TRUE, labels = "LDL", cex = CEX*0.8, adj=0, font=2)
+               circos.text(x=10.5+HDL.shift, y=log(ylab2), facing = "bending.inside", niceFacing = TRUE, labels = "HDL", cex = CEX*0.8, adj=0, font=2) 
+               
+               circos.text(x=14.5+5, y=log(ylab3), facing = "bending.inside", niceFacing = TRUE, labels = "Cholesterol", cex = CEX*0.9, adj=0, font=2)
+               circos.text(x=14.5+VLDL.shift, y=log(ylab2), facing = "bending.inside", niceFacing = TRUE, labels = "VLDL", cex = CEX*0.8, adj=0, font=2)
+               circos.text(x=20.5+LDL.shift, y=log(ylab2), facing = "bending.inside", niceFacing = TRUE, labels = "LDL", cex = CEX*0.8, adj=0, font=2)
+               circos.text(x=24.5+HDL.shift, y=log(ylab2), facing = "bending.inside", niceFacing = TRUE, labels = "HDL", cex = CEX*0.8, adj=0, font=2) 
+               
+               circos.text(x=28.5+5, y=log(ylab3), facing = "bending.inside", niceFacing = TRUE, labels = "Free cholesterol", cex = CEX*0.9, adj=0, font=2)
+               circos.text(x=28.5+VLDL.shift, y=log(ylab2), facing = "bending.inside", niceFacing = TRUE, labels = "VLDL", cex = CEX*0.8, adj=0, font=2)
+               circos.text(x=34.5+LDL.shift, y=log(ylab2), facing = "bending.inside", niceFacing = TRUE, labels = "LDL", cex = CEX*0.8, adj=0, font=2)
+               circos.text(x=38.5+HDL.shift, y=log(ylab2), facing = "bending.inside", niceFacing = FALSE, labels = "HDL", cex = CEX*0.8, adj=0, font=2) 
+               
+               circos.text(x=42.5+5, y=log(ylab3), facing = "bending.inside", niceFacing = TRUE, labels = "Esterified Cholesterol", cex = CEX*0.9, adj=0, font=2)
+               circos.text(x=42.5+VLDL.shift, y=log(ylab2), facing = "bending.inside", niceFacing = TRUE, labels = "VLDL", cex = CEX*0.8, adj=0, font=2)
+               circos.text(x=48.5+LDL.shift, y=log(ylab2), facing = "bending.inside", niceFacing = TRUE, labels = "LDL", cex = CEX*0.8, adj=0, font=2)
+               circos.text(x=52.5+HDL.shift, y=log(ylab2), facing = "bending.inside", niceFacing = TRUE, labels = "HDL", cex = CEX*0.8, adj=0, font=2) 
+               
+               circos.text(x=56.5+5, y=log(ylab3), facing = "bending.inside", niceFacing = TRUE, labels = "Triglycerides", cex = CEX*0.9, adj=0, font=2)
+               circos.text(x=56.5+VLDL.shift, y=log(ylab2), facing = "bending.inside", niceFacing = TRUE, labels = "VLDL", cex = CEX*0.8, adj=0, font=2)
+               circos.text(x=62.5+LDL.shift, y=log(ylab2), facing = "bending.inside", niceFacing = TRUE, labels = "LDL", cex = CEX*0.8, adj=0, font=2)
+               circos.text(x=66.5+HDL.shift, y=log(ylab2), facing = "bending.inside", niceFacing = TRUE, labels = "HDL", cex = CEX*0.8, adj=0, font=2) 
+               
+               circos.text(x=70.5+5, y=log(ylab3), facing = "bending.inside", niceFacing = TRUE, labels = "Phospholipids", cex = CEX*0.9, adj=0, font=2)
+               circos.text(x=70.5+VLDL.shift, y=log(ylab2), facing = "bending.inside", niceFacing = TRUE, labels = "VLDL", cex = CEX*0.8, adj=0, font=2)
+               circos.text(x=76.5+LDL.shift, y=log(ylab2), facing = "bending.inside", niceFacing = TRUE, labels = "LDL", cex = CEX*0.8, adj=0, font=2)
+               circos.text(x=80.5+HDL.shift, y=log(ylab2), facing = "bending.inside", niceFacing = TRUE, labels = "HDL", cex = CEX*0.8, adj=0, font=2) 
+               
+               circos.text(x=84.5+5, y=log(ylab3), facing = "bending.inside", niceFacing = TRUE, labels = "Total lipids", cex = CEX*0.9, adj=0, font=2)
+               circos.text(x=84.5+VLDL.shift, y=log(ylab2), facing = "bending.inside", niceFacing = TRUE, labels = "VLDL", cex = CEX*0.8, adj=0, font=2)
+               circos.text(x=90.5+LDL.shift, y=log(ylab2), facing = "bending.inside", niceFacing = TRUE, labels = "LDL", cex = CEX*0.8, adj=0, font=2)
+               circos.text(x=94.5+HDL.shift, y=log(ylab2), facing = "bending.inside", niceFacing = TRUE, labels = "HDL", cex = CEX*0.8, adj=0, font=2) 
+               
+               circos.text(x=98.5, y=log(ylab3), facing = "bending.inside", niceFacing = TRUE, labels = "Sizes & Apo-LP", cex = CEX*0.9, adj=0, font=2)
+               
+               circos.text(x=104.5+6, y=log(ylab3), facing = "bending.inside", niceFacing = TRUE, labels = "Fatty acids", cex = CEX*0.9, adj=0, font=2)
+               
+               circos.text(x=119.5, y=log(ylab3), facing = "bending.inside", niceFacing = TRUE, labels = "Cholines, glycolysis, & amino acids", cex = CEX*0.9, adj=0, font=2)
+               
+               circos.text(x=133.5, y=log(ylab3), facing = "bending.inside", niceFacing = TRUE, labels = "  Ketone bodies", cex = CEX*0.9, adj=0, font=2)
+               circos.text(x=133.5, y=log(ylab3b), facing = "bending.inside", niceFacing = TRUE, labels = "& fluid balance", cex = CEX*0.9, adj=0, font=2)
+               
+               circos.text(x=c(1:98)+0.25,   y = log(ylab1), labels = labs1, facing = "clockwise", niceFacing = TRUE, cex = CEX*0.7, adj = 0, font = 1)
+               circos.text(x=c(99:139)+0.25, y = log(ylab1), labels = labs4, facing = "clockwise", niceFacing = TRUE, cex = CEX*0.7, adj = 0, font = 1)
+               
+               
+             }
+             
+)
+```
+
+    ## Note: 2 points are out of plotting region in sector 'mets', track '1'.
+
+    ## Note: 2 points are out of plotting region in sector 'mets', track '1'.
+    ## Note: 2 points are out of plotting region in sector 'mets', track '1'.
+    ## Note: 2 points are out of plotting region in sector 'mets', track '1'.
+
+    ## Note: 7 points are out of plotting region in sector 'mets', track '1'.
+
+    ## Note: 1 point is out of plotting region in sector 'mets', track '1'.
+    ## Note: 1 point is out of plotting region in sector 'mets', track '1'.
+
+    ## Note: 21 points are out of plotting region in sector 'mets', track '1'.
+
+    ## Note: 1 point is out of plotting region in sector 'mets', track '1'.
+    ## Note: 1 point is out of plotting region in sector 'mets', track '1'.
+
+    ## Note: 4 points are out of plotting region in sector 'mets', track '1'.
+
+    ## Note: 1 point is out of plotting region in sector 'mets', track '1'.
+    ## Note: 1 point is out of plotting region in sector 'mets', track '1'.
+
+    ## Note: 3 points are out of plotting region in sector 'mets', track '1'.
+
+    ## Note: 1 point is out of plotting region in sector 'mets', track '1'.
+    ## Note: 1 point is out of plotting region in sector 'mets', track '1'.
+
+    ## Note: 3 points are out of plotting region in sector 'mets', track '1'.
+
+    ## Note: 1 point is out of plotting region in sector 'mets', track '1'.
+    ## Note: 1 point is out of plotting region in sector 'mets', track '1'.
+
+    ## Note: 11 points are out of plotting region in sector 'mets', track '1'.
+
+    ## Note: 1 point is out of plotting region in sector 'mets', track '1'.
+    ## Note: 1 point is out of plotting region in sector 'mets', track '1'.
+
+    ## Note: 4 points are out of plotting region in sector 'mets', track '1'.
+
+    ## Note: 1 point is out of plotting region in sector 'mets', track '1'.
+    ## Note: 1 point is out of plotting region in sector 'mets', track '1'.
+
+    ## Note: 3 points are out of plotting region in sector 'mets', track '1'.
+
+    ## Note: 1 point is out of plotting region in sector 'mets', track '1'.
+    ## Note: 1 point is out of plotting region in sector 'mets', track '1'.
+
+    ## Note: 3 points are out of plotting region in sector 'mets', track '1'.
+
+    ## Note: 1 point is out of plotting region in sector 'mets', track '1'.
+    ## Note: 1 point is out of plotting region in sector 'mets', track '1'.
+
+    ## Note: 16 points are out of plotting region in sector 'mets', track '1'.
+
+    ## Note: 1 point is out of plotting region in sector 'mets', track '1'.
+    ## Note: 1 point is out of plotting region in sector 'mets', track '1'.
+
+    ## Note: 4 points are out of plotting region in sector 'mets', track '1'.
+
+    ## Note: 1 point is out of plotting region in sector 'mets', track '1'.
+    ## Note: 1 point is out of plotting region in sector 'mets', track '1'.
+
+    ## Note: 3 points are out of plotting region in sector 'mets', track '1'.
+
+    ## Note: 1 point is out of plotting region in sector 'mets', track '1'.
+
+    ## Note: 3 points are out of plotting region in sector 'mets', track '1'.
+
+    ## Note: 1 point is out of plotting region in sector 'mets', track '1'.
+    ## Note: 1 point is out of plotting region in sector 'mets', track '1'.
+
+    ## Note: 22 points are out of plotting region in sector 'mets', track '1'.
+
+    ## Note: 1 point is out of plotting region in sector 'mets', track '1'.
+    ## Note: 1 point is out of plotting region in sector 'mets', track '1'.
+
+    ## Note: 4 points are out of plotting region in sector 'mets', track '1'.
+
+    ## Note: 1 point is out of plotting region in sector 'mets', track '1'.
+    ## Note: 1 point is out of plotting region in sector 'mets', track '1'.
+
+    ## Note: 3 points are out of plotting region in sector 'mets', track '1'.
+
+    ## Note: 1 point is out of plotting region in sector 'mets', track '1'.
+    ## Note: 1 point is out of plotting region in sector 'mets', track '1'.
+
+    ## Note: 3 points are out of plotting region in sector 'mets', track '1'.
+
+    ## Note: 1 point is out of plotting region in sector 'mets', track '1'.
+    ## Note: 1 point is out of plotting region in sector 'mets', track '1'.
+
+    ## Note: 13 points are out of plotting region in sector 'mets', track '1'.
+
+    ## Note: 1 point is out of plotting region in sector 'mets', track '1'.
+    ## Note: 1 point is out of plotting region in sector 'mets', track '1'.
+
+    ## Note: 4 points are out of plotting region in sector 'mets', track '1'.
+
+    ## Note: 1 point is out of plotting region in sector 'mets', track '1'.
+    ## Note: 1 point is out of plotting region in sector 'mets', track '1'.
+
+    ## Note: 3 points are out of plotting region in sector 'mets', track '1'.
+
+    ## Note: 1 point is out of plotting region in sector 'mets', track '1'.
+    ## Note: 1 point is out of plotting region in sector 'mets', track '1'.
+
+    ## Note: 3 points are out of plotting region in sector 'mets', track '1'.
+
+    ## Note: 1 point is out of plotting region in sector 'mets', track '1'.
+    ## Note: 1 point is out of plotting region in sector 'mets', track '1'.
+
+    ## Note: 13 points are out of plotting region in sector 'mets', track '1'.
+
+    ## Note: 1 point is out of plotting region in sector 'mets', track '1'.
+    ## Note: 1 point is out of plotting region in sector 'mets', track '1'.
+
+    ## Note: 4 points are out of plotting region in sector 'mets', track '1'.
+
+    ## Note: 1 point is out of plotting region in sector 'mets', track '1'.
+    ## Note: 1 point is out of plotting region in sector 'mets', track '1'.
+
+    ## Note: 3 points are out of plotting region in sector 'mets', track '1'.
+
+    ## Note: 1 point is out of plotting region in sector 'mets', track '1'.
+    ## Note: 1 point is out of plotting region in sector 'mets', track '1'.
+
+    ## Note: 3 points are out of plotting region in sector 'mets', track '1'.
+
+    ## Note: 1 point is out of plotting region in sector 'mets', track '1'.
+    ## Note: 1 point is out of plotting region in sector 'mets', track '1'.
+
+    ## Note: 12 points are out of plotting region in sector 'mets', track '1'.
+
+    ## Note: 1 point is out of plotting region in sector 'mets', track '1'.
+    ## Note: 1 point is out of plotting region in sector 'mets', track '1'.
+
+    ## Note: 4 points are out of plotting region in sector 'mets', track '1'.
+
+    ## Note: 1 point is out of plotting region in sector 'mets', track '1'.
+    ## Note: 1 point is out of plotting region in sector 'mets', track '1'.
+
+    ## Note: 3 points are out of plotting region in sector 'mets', track '1'.
+
+    ## Note: 1 point is out of plotting region in sector 'mets', track '1'.
+    ## Note: 1 point is out of plotting region in sector 'mets', track '1'.
+
+    ## Note: 3 points are out of plotting region in sector 'mets', track '1'.
+
+    ## Note: 1 point is out of plotting region in sector 'mets', track '1'.
+    ## Note: 1 point is out of plotting region in sector 'mets', track '1'.
+
+    ## Note: 14 points are out of plotting region in sector 'mets', track '1'.
+
+    ## Note: 1 point is out of plotting region in sector 'mets', track '1'.
+    ## Note: 1 point is out of plotting region in sector 'mets', track '1'.
+
+    ## Note: 11 points are out of plotting region in sector 'mets', track '1'.
+
+    ## Note: 1 point is out of plotting region in sector 'mets', track '1'.
+    ## Note: 1 point is out of plotting region in sector 'mets', track '1'.
+
+    ## Note: 35 points are out of plotting region in sector 'mets', track '1'.
+
+    ## Note: 1 point is out of plotting region in sector 'mets', track '1'.
+    ## Note: 1 point is out of plotting region in sector 'mets', track '1'.
+
+    ## Note: 15 points are out of plotting region in sector 'mets', track '1'.
+
+    ## Note: 1 point is out of plotting region in sector 'mets', track '1'.
+    ## Note: 1 point is out of plotting region in sector 'mets', track '1'.
+
+    ## Note: 15 points are out of plotting region in sector 'mets', track '1'.
+
+    ## Note: 98 points are out of plotting region in sector 'mets', track '1'.
+
+    ## Note: 19 points are out of plotting region in sector 'mets', track '1'.
+
+    ## Note: 79 points are out of plotting region in sector 'mets', track '1'.
+
+    ## Note: 41 points are out of plotting region in sector 'mets', track '1'.
+    ## Note: 41 points are out of plotting region in sector 'mets', track '1'.
+
+``` r
+#text(0, 0, paste("Increase or decrease in odds\n ", file.out ,"\nper 1-SD higher\nbiomarker", sep = ""), cex = CEX*1.1, font=2)
+text(0, 0, paste("Increase or decrease in\nodds of incident diabetes\nassociated with 1SD\nhigher levels of each\nNMR-biomarker"), cex = CEX*1.1, font=2)
+
+circos.clear()  
+
+dev.off()
+```
+
+    ## png 
+    ##   2
