@@ -167,8 +167,8 @@ XLIM <- c(min(as.numeric(datasub$id_name_s)), max(as.numeric(datasub$id_name_s))
 
 ### Labels
 1. `labs1` Contains the lipoprotein subclass size acronyms. This is repeated 7 times, once per each measurement of interest (*i.e. lipoprotein particle number, cholesterol, free cholesterol, esterified cholesterol, triglycerides, phospholipids, and total lipids*).
-2. Vector with aditional labels for the rest of biomarkers besides lipids within lipoproteins.
-3. `CEX` states a vector to use for sizing. If user changes `CEX` (*with upper case*), then all those functions using CEX will be proportionally re-sized.
+2. `labs4` Vector with additional labels for the rest of biomarkers besides lipids within lipoproteins.
+3. `CEX` states a vector to use for sizing. If user changes `CEX` (*with upper case*), then all those functions using CEX will be proportionally re-sized.  
 **NOTE** if the user changes the array defining `id_name_s`, then this section should be changed accordingly.  
 
 ```{r code6, echo=TRUE, message=FALSE, warning=FALSE}
@@ -215,7 +215,8 @@ I **highly** recommend to have a quick look into the [documentation](https://jok
 
 ### Parameters
 Circlize transforms a "Cartesian plane" with *x* and *y* axis into a *circle* of *y* radius and *x* circumference. Basically, a traditional rectangular plot is twisted into a donut. The *donut* is called *sector*. Sectors can be split in several tracks. You can add additional sectors or *donuts* in ever more central levels.  
-**Our example only has 1 sector with 1 track.**
+  
+**Our example only has 1 sector with 1 track.**  
 `track.height` determines the proportion of the radius of the circle the track (where we are going to plot) is going to use. The circle used by circlize always has a radius of 1, so a height of 0.1 means 10% of the circle radius.   
 `gap.degree` determines the space between the end of the track and the start of the track.  
 `start.degree` determines the place to start the track at in degrees (count starts at the *West*).  
@@ -245,7 +246,7 @@ To highlight specific regions use *circlize()* to calculate the positions in the
 
 The highlight region to be calculated by `circlize()`needs coordinates in *x*, *y*, a `sector.index`, in this case `"mets"`, and a `track.index`, in this case `1`.  
 
-**In this example, the coordinates were imputed manually and correspond to the array defined by id_names_s. If changed, this section must also be changed to preserve meaningful highlight regions.**  
+**NOTE:** In this example, the coordinates were imputed manually and correspond to the array defined by `id_names_s`. If changed, this section must also be changed to preserve meaningful highlight regions.  
 
 
 Unless the user wants to change the order of the biomarkers, this section needs no further details explained.  
@@ -297,6 +298,8 @@ draw.sector(pos14[1, "theta"], pos14[2, "theta"], pos14[1, "rou"], pos14[2, "rou
 pos15 = circlize(c(136.5, 139.5), c(min(YLIM), max(YLIM)), sector.index = "mets", track.index = 1)
 draw.sector(pos15[1, "theta"], pos15[2, "theta"], pos15[1, "rou"], pos15[2, "rou"], clock.wise = TRUE, col = "#CCCCCC56", border = NA) 
 ```
+
+More to come soon...
 
 ```{r code12, echo=TRUE, message=FALSE, warning=FALSE, eval=FALSE}
 circos.track(track.index = 1, bg.border = "white", factors = fact, ylim = YLIM

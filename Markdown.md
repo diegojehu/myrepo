@@ -16,6 +16,9 @@ goes as follows:
 | ----------- | ------------ | -------- | ------ | --------- |
 | 1           | XXL\_VLDL\_P | 0.3709   | 0.0358 | 107.6032  |
 
+Data should be sorted by `id_name_s`, which corresponds to the following
+biomarkers as per `text1`:
+
     ##   [1] XXL_VLDL_P  XL_VLDL_P   L_VLDL_P    M_VLDL_P    S_VLDL_P    XS_VLDL_P  
     ##   [7] IDL_P       L_LDL_P     M_LDL_P     S_LDL_P     XL_HDL_P    L_HDL_P    
     ##  [13] M_HDL_P     S_HDL_P     XXL_VLDL_C  XL_VLDL_C   L_VLDL_C    M_VLDL_C   
@@ -93,10 +96,11 @@ other subgroups of interest.
 
 Using the objects define above, we now call the dataset with SAS
 output.  
-1\. We exponentiate `Estimate` to create `RR`. 2. We then create
-`RR_1<-RR` if `RR< 1` (*i.e. those with negative associations*), else
-`RR_1<-1` 3. We also then create `RR_2<-RR` if `RR>1` (*i.e. those with
-positive associations*), else `RR_2<-1`
+1\. We exponentiate `Estimate` to create `RR`.  
+2\. We then create `RR_1<-RR` if `RR< 1` (*i.e. those with negative
+associations*), else `RR_1<-1`.  
+3\. We also then create `RR_2<-RR` if `RR>1` (*i.e. those with positive
+associations*), else `RR_2<-1`.
 
 ``` r
 datasub <<- read.csv(paste("", ROOTDIR ,"data\\",PREFIX,"_",OUTCOME,"_",GROUP,".csv", sep=""), skip=0, header=TRUE)
@@ -113,7 +117,7 @@ datasub$RR_2 <- datasub$RR
 datasub$RR_2[datasub$RR<1] <- 1
 ```
 
-## 3\. P-values
+## 3\. Estimating *p-values*.
 
 1.  From SAS output now imported into `datasub`, estimate p-values from
     chisq statistics `datasub$RawP`.
@@ -173,8 +177,8 @@ proportionality could be substantially improved.**
 ### Y-axis
 
 1.  `YLIM` `YCUTS` and `YCUTS.LABS` define the Y-axis. *Parameters here
-    are defined manually but could be automated by extracting MIN and
-    MAX and using the pretty function to define cuts and labels*.
+    are defined manually but could be automated by extracting `MIN` and
+    `MAX` and using the pretty function to define cuts and labels*.
 2.  Alternatively, one could define labels as percentage instead of
     relative risks, if desired.
 3.  `ylab` 1:3 define the levels for labels around the circular plot
@@ -238,13 +242,13 @@ XLIM <- c(min(as.numeric(datasub$id_name_s)), max(as.numeric(datasub$id_name_s))
     (*i.e. lipoprotein particle number, cholesterol, free cholesterol,
     esterified cholesterol, triglycerides, phospholipids, and total
     lipids*).
-2.  Vector with aditional labels for the rest of biomarkers besides
-    lipids within lipoproteins.
+2.  `labs4` Vector with additional labels for the rest of biomarkers
+    besides lipids within lipoproteins.
 3.  `CEX` states a vector to use for sizing. If user changes `CEX`
     (*with upper case*), then all those functions using CEX will be
-    proportionally re-sized. **NB** if the user changes the array
-    defining `id_name_s`, then this section should be changed
-    accordingly.
+    proportionally re-sized.  
+    **NOTE** if the user changes the array defining `id_name_s`, then
+    this section should be changed accordingly.
 
 <!-- end list -->
 
@@ -265,11 +269,11 @@ CEX <- (8)
 
 ### Graphic device
 
-We decided to use the png device, but others such as pdf or tiff do the
-trick as well. 1. The line we would use produces a filename that
-includes the `file.out` substrig defined above as well as `GROUP` and
-the date. 2. For this document, we parametrised the string that
-generates the png file.
+We decided to use the png graphic device, but others such as pdf or tiff
+do the trick as well.  
+1\. The line we would use produces a filename that includes the
+`file.out` substring defined above as well as `GROUP` and the date.  
+2\. For this document, have named the output file `"foo.png"`.
 
 ``` r
 # 1.
@@ -277,24 +281,94 @@ generates the png file.
 # 2.
 name <- "foo.png"
 png(filename = name, height=6000,width=6000, bg = "white")
-
-#png("1.png", height=6000,width=6000, bg = "white")
 ```
+
+### Margins
+
+The outer margins `OMA` are quite large (*29 spaces, in the 4 margins*),
+as we need space to place our labels.
 
 ``` r
 par(xpd = NA, oma = rep(29,4))
+```
+
+## 5\. Circos function
+
+This represents the core of the script, although most of the job is done
+above. It uses the *circlize* package but, as you will see, most of the
+basic R plot functions are preserved and only slightly changed.
+
+Importantly, this plot uses only very limitedly the applications of the
+*circlize* package. Some of the approaches I have had to make the plot
+are probably clumsy or redundant.
+
+I **highly** recommend to have a quick look into the
+[documentation](https://jokergoo.github.io/circlize_book/book/). It is
+simpler than it looks and relatively easy to work with.
+
+### Parameters
+
+Circlize transforms a “Cartesian plane” with *x* and *y* axis into a
+*circle* of *y* radius and *x* circumference. Basically, a traditional
+rectangular plot is twisted into a donut. The *donut* is called
+*sector*. Sectors can be split in several tracks. You can add additional
+sectors or *donuts* in ever more central levels.
+
+**Our example only has 1 sector with 1 track.**  
+`track.height` determines the proportion of the radius of the circle the
+track (where we are going to plot) is going to use. The circle used by
+circlize always has a radius of 1, so a height of 0.1 means 10% of the
+circle radius.  
+`gap.degree` determines the space between the end of the track and the
+start of the track.  
+`start.degree` determines the place to start the track at in degrees
+(count starts at the *West*).
+
+``` r
 circos.par("track.height" = 0.6, 
            cell.padding = c(0, 0, 0, 0),
            gap.degree = 45,
            start.degree = 90,
-           unit.circle.segments=50000) # We set a global parameter track.height to 0.1 by the option function circis.par() so that all tracks which will be added have a default height of 0.1. The circle used by circlize always has a radius of 1, so a height of 0.1 means 10% of the circle radius 
+           unit.circle.segments=50000)
+```
 
+### Initialize the circle
 
+1.  `circos.initialize` is the core function that determines the basic
+    parameters. I am still not entirely sure how it works. However, a
+    character object in the `factors` option (in this example `fact`)
+    does the trick and this becomes the name of our *sector*.  
+2.  `xlim` is defined by the length of the `id_name_s` column, as noted
+    above.
+
+<!-- end list -->
+
+``` r
+# 1.
 circos.initialize(factors = fact, xlim = c(0,len.data))
 
+# 2.
 circos.track(factors = fact, ylim = YLIM, bg.border = NA)
+```
 
-# Draw highlights for sections of interest here
+### Draw shades for metabolic subgroups
+
+To highlight specific regions use *circlize()* to calculate the
+positions in the polar coordinate. Always keep in mind that *x-axis* in
+the cell are always clock wise.
+
+The highlight region to be calculated by `circlize()`needs coordinates
+in *x*, *y*, a `sector.index`, in this case `"mets"`, and a
+`track.index`, in this case `1`.
+
+**NOTE:** In this example, the coordinates were imputed manually and
+correspond to the array defined by `id_names_s`. If changed, this
+section must also be changed to preserve meaningful highlight regions.
+
+Unless the user wants to change the order of the biomarkers, this
+section needs no further details explained.
+
+``` r
 pos1 = circlize(c(0.5, 6.5), c(min(YLIM), max(YLIM)), sector.index = "mets", track.index = 1)
 draw.sector(pos1[1, "theta"], pos1[2, "theta"], pos1[1, "rou"], pos1[2, "rou"], clock.wise = TRUE, col = "#CCCCCC56", border = NA) 
 
@@ -339,7 +413,11 @@ draw.sector(pos14[1, "theta"], pos14[2, "theta"], pos14[1, "rou"], pos14[2, "rou
 
 pos15 = circlize(c(136.5, 139.5), c(min(YLIM), max(YLIM)), sector.index = "mets", track.index = 1)
 draw.sector(pos15[1, "theta"], pos15[2, "theta"], pos15[1, "rou"], pos15[2, "rou"], clock.wise = TRUE, col = "#CCCCCC56", border = NA) 
+```
 
+More to come soon…
+
+``` r
 circos.track(track.index = 1, bg.border = "white", factors = fact, ylim = YLIM
              , panel.fun = function(x,y){
                
@@ -361,14 +439,13 @@ circos.track(track.index = 1, bg.border = "white", factors = fact, ylim = YLIM
                
                
                # # Bars
-               circos.rect(xleft=(as.numeric(datasub$id_name_s)-.35), xright=(as.numeric(datasub$id_name_s)+.35), ytop=log(as.numeric(datasub$RR_1_s)), ybottom = log(1), col = "#0066CCCC" , lwd=2)
+               circos.rect(xleft=(as.numeric(datasub$id_name_s)-.35), xright=(as.numeric(datasub$id_name_s)+.35),ytop=log(as.numeric(datasub$RR_1_s)), ybottom = log(1), col = "#0066CCCC" , lwd=2)
                circos.rect(xleft=(as.numeric(datasub$id_name_s)-.35), xright=(as.numeric(datasub$id_name_s)+.35), ytop=log(as.numeric(datasub$RR_2_s)), ybottom = log(1), col = "#CC0000CC" , lwd=2)
                
                circos.rect(xleft=(as.numeric(datasub$id_name_s)-.35), xright=(as.numeric(datasub$id_name_s)+.35), ytop=log(as.numeric(datasub$RR_1)), ybottom = log(1), col = "#0066CC40" , lwd=2)
                circos.rect(xleft=(as.numeric(datasub$id_name_s)-.35), xright=(as.numeric(datasub$id_name_s)+.35), ytop=log(as.numeric(datasub$RR_2)), ybottom = log(1), col = "#CC000040" , lwd=2)
                
                
-               # 
                # Confidence intervals
                circos.rect(xleft=(as.numeric(datasub$id_name_s)), xright=(as.numeric(datasub$id_name_s)), ytop=(as.numeric(datasub$Estimate)+(1.95*as.numeric(datasub$StdErr))), ybottom = (as.numeric(datasub$Estimate)-(1.95*(as.numeric(datasub$StdErr)))), col = "#262626" , lwd=2)
                
@@ -448,6 +525,8 @@ circos.clear()
 
 dev.off()
 ```
+
+### To be continued…
 
     ## png 
     ##   2
