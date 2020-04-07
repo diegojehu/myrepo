@@ -2,7 +2,10 @@
 title: "The Wheel"
 author: "Diego Aguilar-Ramirez"
 date: "06/04/2020"
-output: github_document
+output: 
+      html_document:
+        keep_md: true
+
 params:
   ROOTDIR: !r ROOTDIR <- "C:\\Users\\Diego\\Desktop\\NDPH\\Nested case-control study\\"
   
@@ -11,13 +14,13 @@ params:
 
 The following script produces a circular plot showing associations between NMR measured biomarkers and an outcome of interest (in this example, incident diabetes). These associations can be product of any generalised linear model that is of relevance for epidemiology such as linear regression, logistic regression, or Cox regression.  
 
-The general structure of the SAS output datasource (usually in .csv) goes as follows:
+The general structure of the SAS output datasource (usually in .csv) should go as follows:
 
 id_name_s | text1     | Estimate | StdErr | WaldChiSq |
 ----------|-----------|----------|--------|-----------|
 1         | XXL_VLDL_P|0.3709    |0.0358  |107.6032   |
 
-Data should be sorted by `id_name_s`, which corresponds to the following biomarkers as per `text1`:
+Data should be sorted by `id_name_s`, which corresponds to the following biomarkers array as per `text1`:
 ```{r intro, echo=FALSE, message=FALSE, warning=FALSE }
 ROOTDIR <- params$ROOTDIR
 PREFIX <- "LR"  
@@ -54,17 +57,24 @@ fact <- "mets"
 ```
 
 `ROOTDIR`  = path to where data with results to plot is located. For this example, ROOTDIR is parametrised, and it should be adjusted to where datasource is located.  
+
 `PREFIX` = Prefix from SAS output file name. I use LR = Logistic regression.  
+
 `OUTCOME` = Substring from SAS output file name. I use PRDM = prospective or incident diabetes.  
+
 `GROUP` = Substring from SAS output file name. I use ALL = as in all individuals included, but could be used to label stratified analyses or other subgroups of interest.  
+
 `file.out` = Substring for the output file name.  
+
 `fact` = String that can be changed. I randomly chose "mets".  
 
 ## 2. Import datasets
-Using the objects define above, we now call the dataset with SAS output.  
+Using the objects define above, we now call the datasource with SAS output to create `datasub`.  
+
 1. We exponentiate `Estimate` to create `RR`.  
 2. We then create `RR_1<-RR` if `RR< 1` (*i.e. those with negative associations*), else `RR_1<-1`.   
 3. We also then create `RR_2<-RR` if `RR>1` (*i.e. those with positive associations*), else `RR_2<-1`.    
+
 ```{r code2, echo=TRUE, message=FALSE, warning=FALSE, tidy=TRUE}
 
 datasub <<- read.csv(paste("", ROOTDIR ,"data\\",PREFIX,"_",OUTCOME,"_",GROUP,".csv", sep=""), skip=0, header=TRUE)
@@ -244,7 +254,7 @@ circos.track(factors = fact, ylim = YLIM, bg.border = NA)
 
 To highlight specific regions use *circlize()* to calculate the positions in the polar coordinate. Always keep in mind that *x-axis* in the cell are always clock wise.  
 
-The highlight region to be calculated by `circlize()`needs coordinates in *x*, *y*, a `sector.index`, in this case `"mets"`, and a `track.index`, in this case `1`.  
+The highlight region to be calculated by `circlize()`needs coordinates in *x* and *y*, a `sector.index` (in this case `"mets"`), and a `track.index` (in this case `1`).  
 
 **NOTE:** In this example, the coordinates were imputed manually and correspond to the array defined by `id_names_s`. If changed, this section must also be changed to preserve meaningful highlight regions.  
 
@@ -299,110 +309,158 @@ pos15 = circlize(c(136.5, 139.5), c(min(YLIM), max(YLIM)), sector.index = "mets"
 draw.sector(pos15[1, "theta"], pos15[2, "theta"], pos15[1, "rou"], pos15[2, "rou"], clock.wise = TRUE, col = "#CCCCCC56", border = NA) 
 ```
 
-More to come soon...
+### Plotting region
 
+1. Using `circos.track`, we select track `1`, using factors defined in object `fact`, and the `YLIM` defined above.  
+2. We use `circos.segmets` exactly as `segments` would be used to create:  
+   i) Start and end of plot lines.  
+   ii) Outer and inner lines.  
+   iii) Lines at null hypotesis and other cuts.  
 ```{r code12, echo=TRUE, message=FALSE, warning=FALSE, eval=FALSE}
-circos.track(track.index = 1, bg.border = "white", factors = fact, ylim = YLIM
-             , panel.fun = function(x,y){
-               
-               # Start of plot line
-               circos.segments(x0=min(XLIM)-0.5, y0=max(YLIM), x1=min(XLIM)-0.5, y1=min(YLIM), col = "black", lwd=2)
-               # End of plot line
-               circos.segments(x0=max(XLIM)+0.5, y0=max(YLIM), x1=max(XLIM)+0.5, y1=min(YLIM), col = "black", lwd=2)
-               
-               # Outer black line
-               circos.segments(x0=min(XLIM)-.75, y0=max(YLIM), x1=max(XLIM)+0.5, y1=max(YLIM), col = "black", lwd=2)
-               # Inner black line
-               circos.segments(x0=min(XLIM)-.75, y0=min(YLIM), x1=max(XLIM)+0.5, y1=min(YLIM), col = "black", lwd=2)
-               
-               # Null Hypothesis Line (ie RR = 1) black line
-               circos.segments(x0=min(XLIM)-.75, y0=0, x1=max(XLIM)+0.5, y1=0, col = "black", lwd=2)
-               
-               circos.segments(x0=min(XLIM)-.75, y0=(YCUTS[2]), x1=max(XLIM)+0.5, y1=(YCUTS[2]), col = "gray75", lwd=2)
-               circos.segments(x0=min(XLIM)-.75, y0=(YCUTS[4]), x1=max(XLIM)+0.5, y1=(YCUTS[4]), col = "gray75", lwd=2)
-               
-               
-               # # Bars
-               circos.rect(xleft=(as.numeric(datasub$id_name_s)-.35), xright=(as.numeric(datasub$id_name_s)+.35),ytop=log(as.numeric(datasub$RR_1_s)), ybottom = log(1), col = "#0066CCCC" , lwd=2)
-               circos.rect(xleft=(as.numeric(datasub$id_name_s)-.35), xright=(as.numeric(datasub$id_name_s)+.35), ytop=log(as.numeric(datasub$RR_2_s)), ybottom = log(1), col = "#CC0000CC" , lwd=2)
-               
-               circos.rect(xleft=(as.numeric(datasub$id_name_s)-.35), xright=(as.numeric(datasub$id_name_s)+.35), ytop=log(as.numeric(datasub$RR_1)), ybottom = log(1), col = "#0066CC40" , lwd=2)
-               circos.rect(xleft=(as.numeric(datasub$id_name_s)-.35), xright=(as.numeric(datasub$id_name_s)+.35), ytop=log(as.numeric(datasub$RR_2)), ybottom = log(1), col = "#CC000040" , lwd=2)
-               
-               
-               # Confidence intervals
-               circos.rect(xleft=(as.numeric(datasub$id_name_s)), xright=(as.numeric(datasub$id_name_s)), ytop=(as.numeric(datasub$Estimate)+(1.95*as.numeric(datasub$StdErr))), ybottom = (as.numeric(datasub$Estimate)-(1.95*(as.numeric(datasub$StdErr)))), col = "#262626" , lwd=2)
-               
-               # Blobs 
-               # circos.rect(xleft=(as.numeric(datasub$id_name_s)-.15), xright=(as.numeric(datasub$id_name_s)+.15), ytop=log(as.numeric(datasub$RR.x)), ybottom = log(as.numeric(datasub$RR.y)), col = "grey75" , lwd=0.0001)
-               
-               # # BLUE = WITHOUT DIABETES
-               # circos.rect  (xleft=(as.numeric(datasub$id_name_s)-.20), xright=(as.numeric(datasub$id_name_s)-.20), ytop=(as.numeric(datasub$Estimate.x)+(1.95*as.numeric(datasub$StdErr.x))), ybottom = (as.numeric(datasub$Estimate.x)-(1.95*(as.numeric(datasub$StdErr.x)))), col = "#0066CC40" , lwd=2)
-               # circos.points(x=as.numeric(datasub$id_name_s)-.20, y=log(as.numeric(datasub$RR.x)), pch = 16, col = "#0066CCE6", cex = 7)
-               # 
-               # # BLUE = WITHOUT DIABETES
-               # circos.rect  (xleft=(as.numeric(datasub$id_name_s)+.20), xright=(as.numeric(datasub$id_name_s)+.20), ytop=(as.numeric(datasub$Estimate.y)+(1.95*as.numeric(datasub$StdErr.y))), ybottom = (as.numeric(datasub$Estimate.y)-(1.95*(as.numeric(datasub$StdErr.y)))), col = "#CC000040" , lwd=2)
-               # circos.points(x=as.numeric(datasub$id_name_s)+.20, y=log(as.numeric(datasub$RR.y)), pch = 16, col = "#CC0000E6", cex = 7)
-               # 
-               
-               VLDL.shift <- 2 
-               LDL.shift <- 1.5
-               HDL.shift <- 1.5
-               
-               circos.yaxis(at=YCUTS, labels = YCUTS.LABS, labels.cex = CEX*1, tick = FALSE, col = "white")
-               
-               circos.text(x=0.5+5, y=log(ylab3), facing = "bending.inside", niceFacing = TRUE, labels = "Lipoprotein particles", cex = CEX*0.9, adj=0, font=2)
-               circos.text(x=0.5+VLDL.shift, y=log(ylab2), facing = "bending.inside", niceFacing = TRUE, labels = "VLDL", cex = CEX*0.8, adj=0, font=2)
-               circos.text(x=6.5+LDL.shift, y=log(ylab2), facing = "bending.inside", niceFacing = TRUE, labels = "LDL", cex = CEX*0.8, adj=0, font=2)
-               circos.text(x=10.5+HDL.shift, y=log(ylab2), facing = "bending.inside", niceFacing = TRUE, labels = "HDL", cex = CEX*0.8, adj=0, font=2) 
-               
-               circos.text(x=14.5+5, y=log(ylab3), facing = "bending.inside", niceFacing = TRUE, labels = "Cholesterol", cex = CEX*0.9, adj=0, font=2)
-               circos.text(x=14.5+VLDL.shift, y=log(ylab2), facing = "bending.inside", niceFacing = TRUE, labels = "VLDL", cex = CEX*0.8, adj=0, font=2)
-               circos.text(x=20.5+LDL.shift, y=log(ylab2), facing = "bending.inside", niceFacing = TRUE, labels = "LDL", cex = CEX*0.8, adj=0, font=2)
-               circos.text(x=24.5+HDL.shift, y=log(ylab2), facing = "bending.inside", niceFacing = TRUE, labels = "HDL", cex = CEX*0.8, adj=0, font=2) 
-               
-               circos.text(x=28.5+5, y=log(ylab3), facing = "bending.inside", niceFacing = TRUE, labels = "Free cholesterol", cex = CEX*0.9, adj=0, font=2)
-               circos.text(x=28.5+VLDL.shift, y=log(ylab2), facing = "bending.inside", niceFacing = TRUE, labels = "VLDL", cex = CEX*0.8, adj=0, font=2)
-               circos.text(x=34.5+LDL.shift, y=log(ylab2), facing = "bending.inside", niceFacing = TRUE, labels = "LDL", cex = CEX*0.8, adj=0, font=2)
-               circos.text(x=38.5+HDL.shift, y=log(ylab2), facing = "bending.inside", niceFacing = FALSE, labels = "HDL", cex = CEX*0.8, adj=0, font=2) 
-               
-               circos.text(x=42.5+5, y=log(ylab3), facing = "bending.inside", niceFacing = TRUE, labels = "Esterified Cholesterol", cex = CEX*0.9, adj=0, font=2)
-               circos.text(x=42.5+VLDL.shift, y=log(ylab2), facing = "bending.inside", niceFacing = TRUE, labels = "VLDL", cex = CEX*0.8, adj=0, font=2)
-               circos.text(x=48.5+LDL.shift, y=log(ylab2), facing = "bending.inside", niceFacing = TRUE, labels = "LDL", cex = CEX*0.8, adj=0, font=2)
-               circos.text(x=52.5+HDL.shift, y=log(ylab2), facing = "bending.inside", niceFacing = TRUE, labels = "HDL", cex = CEX*0.8, adj=0, font=2) 
-               
-               circos.text(x=56.5+5, y=log(ylab3), facing = "bending.inside", niceFacing = TRUE, labels = "Triglycerides", cex = CEX*0.9, adj=0, font=2)
-               circos.text(x=56.5+VLDL.shift, y=log(ylab2), facing = "bending.inside", niceFacing = TRUE, labels = "VLDL", cex = CEX*0.8, adj=0, font=2)
-               circos.text(x=62.5+LDL.shift, y=log(ylab2), facing = "bending.inside", niceFacing = TRUE, labels = "LDL", cex = CEX*0.8, adj=0, font=2)
-               circos.text(x=66.5+HDL.shift, y=log(ylab2), facing = "bending.inside", niceFacing = TRUE, labels = "HDL", cex = CEX*0.8, adj=0, font=2) 
-               
-               circos.text(x=70.5+5, y=log(ylab3), facing = "bending.inside", niceFacing = TRUE, labels = "Phospholipids", cex = CEX*0.9, adj=0, font=2)
-               circos.text(x=70.5+VLDL.shift, y=log(ylab2), facing = "bending.inside", niceFacing = TRUE, labels = "VLDL", cex = CEX*0.8, adj=0, font=2)
-               circos.text(x=76.5+LDL.shift, y=log(ylab2), facing = "bending.inside", niceFacing = TRUE, labels = "LDL", cex = CEX*0.8, adj=0, font=2)
-               circos.text(x=80.5+HDL.shift, y=log(ylab2), facing = "bending.inside", niceFacing = TRUE, labels = "HDL", cex = CEX*0.8, adj=0, font=2) 
-               
-               circos.text(x=84.5+5, y=log(ylab3), facing = "bending.inside", niceFacing = TRUE, labels = "Total lipids", cex = CEX*0.9, adj=0, font=2)
-               circos.text(x=84.5+VLDL.shift, y=log(ylab2), facing = "bending.inside", niceFacing = TRUE, labels = "VLDL", cex = CEX*0.8, adj=0, font=2)
-               circos.text(x=90.5+LDL.shift, y=log(ylab2), facing = "bending.inside", niceFacing = TRUE, labels = "LDL", cex = CEX*0.8, adj=0, font=2)
-               circos.text(x=94.5+HDL.shift, y=log(ylab2), facing = "bending.inside", niceFacing = TRUE, labels = "HDL", cex = CEX*0.8, adj=0, font=2) 
-               
-               circos.text(x=98.5, y=log(ylab3), facing = "bending.inside", niceFacing = TRUE, labels = "Sizes & Apo-LP", cex = CEX*0.9, adj=0, font=2)
-               
-               circos.text(x=104.5+6, y=log(ylab3), facing = "bending.inside", niceFacing = TRUE, labels = "Fatty acids", cex = CEX*0.9, adj=0, font=2)
-               
-               circos.text(x=119.5, y=log(ylab3), facing = "bending.inside", niceFacing = TRUE, labels = "Cholines, glycolysis, & amino acids", cex = CEX*0.9, adj=0, font=2)
-               
-               circos.text(x=133.5, y=log(ylab3), facing = "bending.inside", niceFacing = TRUE, labels = "  Ketone bodies", cex = CEX*0.9, adj=0, font=2)
-               circos.text(x=133.5, y=log(ylab3b), facing = "bending.inside", niceFacing = TRUE, labels = "& fluid balance", cex = CEX*0.9, adj=0, font=2)
-               
-               circos.text(x=c(1:98)+0.25,   y = log(ylab1), labels = labs1, facing = "clockwise", niceFacing = TRUE, cex = CEX*0.7, adj = 0, font = 1)
-               circos.text(x=c(99:139)+0.25, y = log(ylab1), labels = labs4, facing = "clockwise", niceFacing = TRUE, cex = CEX*0.7, adj = 0, font = 1)
+# 1.
+circos.track(track.index = 1, bg.border = "white", factors = fact, ylim = YLIM, panel.fun = function(x,y){
+
+# i)
+# Start 
+circos.segments(x0=min(XLIM)-0.5, y0=max(YLIM), x1=min(XLIM)-0.5, y1=min(YLIM), col = "black", lwd=2)
+# End 
+circos.segments(x0=max(XLIM)+0.5, y0=max(YLIM), x1=max(XLIM)+0.5, y1=min(YLIM), col = "black", lwd=2)
+
+# ii)
+# Outer
+circos.segments(x0=min(XLIM)-.75, y0=max(YLIM), x1=max(XLIM)+0.5, y1=max(YLIM), col = "black", lwd=2)
+# Inner
+circos.segments(x0=min(XLIM)-.75, y0=min(YLIM), x1=max(XLIM)+0.5, y1=min(YLIM), col = "black", lwd=2)
+
+# iii)
+# Lines at YCUTS
+# Null Hypothesis
+circos.segments(x0=min(XLIM)-.75, y0=0, x1=max(XLIM)+0.5, y1=0, col = "black", lwd=2)
+circos.segments(x0=min(XLIM)-.75, y0=(YCUTS[2]), x1=max(XLIM)+0.5, y1=(YCUTS[2]), col = "gray75", lwd=2)
+circos.segments(x0=min(XLIM)-.75, y0=(YCUTS[4]), x1=max(XLIM)+0.5, y1=(YCUTS[4]), col = "gray75", lwd=2)
+```
+
+### Draw bars with estimates
+`circos.rect` draws a rectangle of `xleft`, `xright`, `ytop`, and `ybottom` dimentions.  
+
+Each bar is defined in the *x* axis by its position withing `is_name_s`. Width is defined by simply substracting or adding 0.35 to the coordinates in `xleft` and `xright`, respectively. 
+
+Each bar of the 4 types of bars are defined in the *y* axis by the value in one of the four `RR` vectors created above, based on the following:  
+
+1. Positive and "significant", in dark red (i.e. `RR_2_s`).  
+2. Positive and not "significant", in light red (i.e. `RR_2`).  
+3. Negative and "significant", in dark blue (i.e. `RR_1_s`).  
+4. Negative and "non-significant", in light blue (i.e. `RR_1`).  
+
+Colours are defined in hex with the last 2 digits defining transparency.
+
+```{r code13, echo=TRUE, message=FALSE, warning=FALSE, eval=FALSE}
+# Bars
+# 1.
+circos.rect(xleft=(as.numeric(datasub$id_name_s)-.35), xright=(as.numeric(datasub$id_name_s)+.35), ytop=log(as.numeric(datasub$RR_2_s)), ybottom = log(1), col = "#CC0000CC" , lwd=2)
+# 2.
+circos.rect(xleft=(as.numeric(datasub$id_name_s)-.35), xright=(as.numeric(datasub$id_name_s)+.35), ytop=log(as.numeric(datasub$RR_2)), ybottom = log(1), col = "#CC000040" , lwd=2)
+# 3.
+circos.rect(xleft=(as.numeric(datasub$id_name_s)-.35), xright=(as.numeric(datasub$id_name_s)+.35),ytop=log(as.numeric(datasub$RR_1_s)), ybottom = log(1), col = "#0066CCCC" , lwd=2)
+# 4.
+circos.rect(xleft=(as.numeric(datasub$id_name_s)-.35), xright=(as.numeric(datasub$id_name_s)+.35), ytop=log(as.numeric(datasub$RR_1)), ybottom = log(1), col = "#0066CC40" , lwd=2)
+```
+
+
+### Draw confidence intervals
+Also using `circos.rect` draw confidence intervals out of `StdErr`.  
+
+**NOTE:** This chunk must be plotted after the bars, so the graphic device can draw the confidence intervals on top.  
+
+```{r code14, echo=TRUE, message=FALSE, warning=FALSE, eval=FALSE}
+# Confidence intervals
+circos.rect(xleft=(as.numeric(datasub$id_name_s)), xright=(as.numeric(datasub$id_name_s)), ytop=(as.numeric(datasub$Estimate)+(1.95*as.numeric(datasub$StdErr))), ybottom = (as.numeric(datasub$Estimate)-(1.95*(as.numeric(datasub$StdErr)))), col = "#262626" , lwd=2)
+```
+
+Another useful option is `circos.points`, which allows to draw blobs with the basic R `pch` options.  
+
+### Draw y-axis
+Similar to basic R plotting axis options.  
+```{r code15, echo=TRUE, message=FALSE, warning=FALSE, eval=FALSE}
+circos.yaxis(at=YCUTS, labels = YCUTS.LABS, labels.cex = CEX*1, tick = FALSE, col = "white")
+```
+
+### Draw labels
+
+We use the function `circos.text` to paste the labels at the margins of the plot (remember we left a lot of space at the margins when defining the plot `par` above). 
+
+The option `facing` defines how to paste the labels. The package has several options that make text look nicely, including `niceFacing`, which makes text flip so it can be read easily.  
+
+The positions for labels are, unfortunately, very inefficiently defined manually.  
+
+All the `.shift` objects were used to manually adjust the labels. These work now, but maybe play with them to see how the labels move.  
+
+```{r code16, echo=TRUE, message=FALSE, warning=FALSE, eval=FALSE}
+VLDL.shift <- 2 
+LDL.shift <- 1.5
+HDL.shift <- 1.5
+
+circos.text(x=0.5+5, y=log(ylab3), facing = "bending.inside", niceFacing = TRUE, labels = "Lipoprotein particles", cex = CEX*0.9, adj=0, font=2)
+circos.text(x=0.5+VLDL.shift, y=log(ylab2), facing = "bending.inside", niceFacing = TRUE, labels = "VLDL", cex = CEX*0.8, adj=0, font=2)
+circos.text(x=6.5+LDL.shift, y=log(ylab2), facing = "bending.inside", niceFacing = TRUE, labels = "LDL", cex = CEX*0.8, adj=0, font=2)
+circos.text(x=10.5+HDL.shift, y=log(ylab2), facing = "bending.inside", niceFacing = TRUE, labels = "HDL", cex = CEX*0.8, adj=0, font=2) 
+
+circos.text(x=14.5+5, y=log(ylab3), facing = "bending.inside", niceFacing = TRUE, labels = "Cholesterol", cex = CEX*0.9, adj=0, font=2)
+circos.text(x=14.5+VLDL.shift, y=log(ylab2), facing = "bending.inside", niceFacing = TRUE, labels = "VLDL", cex = CEX*0.8, adj=0, font=2)
+circos.text(x=20.5+LDL.shift, y=log(ylab2), facing = "bending.inside", niceFacing = TRUE, labels = "LDL", cex = CEX*0.8, adj=0, font=2)
+circos.text(x=24.5+HDL.shift, y=log(ylab2), facing = "bending.inside", niceFacing = TRUE, labels = "HDL", cex = CEX*0.8, adj=0, font=2) 
+
+circos.text(x=28.5+5, y=log(ylab3), facing = "bending.inside", niceFacing = TRUE, labels = "Free cholesterol", cex = CEX*0.9, adj=0, font=2)
+circos.text(x=28.5+VLDL.shift, y=log(ylab2), facing = "bending.inside", niceFacing = TRUE, labels = "VLDL", cex = CEX*0.8, adj=0, font=2)
+circos.text(x=34.5+LDL.shift, y=log(ylab2), facing = "bending.inside", niceFacing = TRUE, labels = "LDL", cex = CEX*0.8, adj=0, font=2)
+circos.text(x=38.5+HDL.shift, y=log(ylab2), facing = "bending.inside", niceFacing = FALSE, labels = "HDL", cex = CEX*0.8, adj=0, font=2) 
+
+circos.text(x=42.5+5, y=log(ylab3), facing = "bending.inside", niceFacing = TRUE, labels = "Esterified Cholesterol", cex = CEX*0.9, adj=0, font=2)
+circos.text(x=42.5+VLDL.shift, y=log(ylab2), facing = "bending.inside", niceFacing = TRUE, labels = "VLDL", cex = CEX*0.8, adj=0, font=2)
+circos.text(x=48.5+LDL.shift, y=log(ylab2), facing = "bending.inside", niceFacing = TRUE, labels = "LDL", cex = CEX*0.8, adj=0, font=2)
+circos.text(x=52.5+HDL.shift, y=log(ylab2), facing = "bending.inside", niceFacing = TRUE, labels = "HDL", cex = CEX*0.8, adj=0, font=2) 
+
+circos.text(x=56.5+5, y=log(ylab3), facing = "bending.inside", niceFacing = TRUE, labels = "Triglycerides", cex = CEX*0.9, adj=0, font=2)
+circos.text(x=56.5+VLDL.shift, y=log(ylab2), facing = "bending.inside", niceFacing = TRUE, labels = "VLDL", cex = CEX*0.8, adj=0, font=2)
+circos.text(x=62.5+LDL.shift, y=log(ylab2), facing = "bending.inside", niceFacing = TRUE, labels = "LDL", cex = CEX*0.8, adj=0, font=2)
+circos.text(x=66.5+HDL.shift, y=log(ylab2), facing = "bending.inside", niceFacing = TRUE, labels = "HDL", cex = CEX*0.8, adj=0, font=2) 
+
+circos.text(x=70.5+5, y=log(ylab3), facing = "bending.inside", niceFacing = TRUE, labels = "Phospholipids", cex = CEX*0.9, adj=0, font=2)
+circos.text(x=70.5+VLDL.shift, y=log(ylab2), facing = "bending.inside", niceFacing = TRUE, labels = "VLDL", cex = CEX*0.8, adj=0, font=2)
+circos.text(x=76.5+LDL.shift, y=log(ylab2), facing = "bending.inside", niceFacing = TRUE, labels = "LDL", cex = CEX*0.8, adj=0, font=2)
+circos.text(x=80.5+HDL.shift, y=log(ylab2), facing = "bending.inside", niceFacing = TRUE, labels = "HDL", cex = CEX*0.8, adj=0, font=2) 
+
+circos.text(x=84.5+5, y=log(ylab3), facing = "bending.inside", niceFacing = TRUE, labels = "Total lipids", cex = CEX*0.9, adj=0, font=2)
+circos.text(x=84.5+VLDL.shift, y=log(ylab2), facing = "bending.inside", niceFacing = TRUE, labels = "VLDL", cex = CEX*0.8, adj=0, font=2)
+circos.text(x=90.5+LDL.shift, y=log(ylab2), facing = "bending.inside", niceFacing = TRUE, labels = "LDL", cex = CEX*0.8, adj=0, font=2)
+circos.text(x=94.5+HDL.shift, y=log(ylab2), facing = "bending.inside", niceFacing = TRUE, labels = "HDL", cex = CEX*0.8, adj=0, font=2) 
+
+circos.text(x=98.5, y=log(ylab3), facing = "bending.inside", niceFacing = TRUE, labels = "Sizes & Apo-LP", cex = CEX*0.9, adj=0, font=2)
+
+circos.text(x=104.5+6, y=log(ylab3), facing = "bending.inside", niceFacing = TRUE, labels = "Fatty acids", cex = CEX*0.9, adj=0, font=2)
+
+circos.text(x=119.5, y=log(ylab3), facing = "bending.inside", niceFacing = TRUE, labels = "Cholines, glycolysis, & amino acids", cex = CEX*0.9, adj=0, font=2)
+
+circos.text(x=133.5, y=log(ylab3), facing = "bending.inside", niceFacing = TRUE, labels = "  Ketone bodies", cex = CEX*0.9, adj=0, font=2)
+circos.text(x=133.5, y=log(ylab3b), facing = "bending.inside", niceFacing = TRUE, labels = "& fluid balance", cex = CEX*0.9, adj=0, font=2)
+
+circos.text(x=c(1:98)+0.25,   y = log(ylab1), labels = labs1, facing = "clockwise", niceFacing = TRUE, cex = CEX*0.7, adj = 0, font = 1)
+circos.text(x=c(99:139)+0.25, y = log(ylab1), labels = labs4, facing = "clockwise", niceFacing = TRUE, cex = CEX*0.7, adj = 0, font = 1)
                
                
              }
              
 )
+```
 
+### Title
+Paste the title at the centre of the circle (at `x=0, y=0`).  
+
+Use `circos.clear` to reset the circular layout parameters.  
+
+Close the plotting device with `dev.off()`.
+
+```{r code17, echo=TRUE, message=FALSE, warning=FALSE, eval=FALSE}
 text(0, 0, paste("Increase or decrease in\nodds of incident diabetes\nassociated with 1SD\nhigher levels of each\nNMR-biomarker"), cex = CEX*1.1, font=2)
 
 circos.clear()  
@@ -411,7 +469,7 @@ dev.off()
 
 
 ```
-### To be continued...
+# 6. Output
 ```{r plot, echo=FALSE, message=FALSE, warning=FALSE}
 # 1.
 #png(paste("",ROOTDIR,"tables and figures\\" , file.out ," " , GROUP ," ", format(Sys.time(), " %Y-%m-%d"), " .png", sep=""), height=6000,width=6000, bg = "white")
@@ -589,6 +647,21 @@ dev.off()
 
 
 ```
+### Figure 1. The NMR metabolic signature associated with incidence of diabetes.
 
+* **Analyses include ~5k who had:**
+  + Baseline NMR measures, AND  
+  + Were resurveyed  
+  
+* **Analyses exclude ~1k who were:**
+  + Aged ≥85 years at recruitment  
+  + Had diagnosed or undiagnosed diabetes at baseline  
+  
+* **Incident diabetes was defined as:**
+  + Diagnosed or undiagnosed diabetes at resurvey  
 
-![Figure 1.](foo.png)
+* **Logistic regression adjusted for:**
+  + Age-group at baseline, sex, district of residence, educational level, fasting duration, and NMR experiment batch number
+  + Significance level was adjusted for false discovery rate at 5%
+
+![](foo.png)
