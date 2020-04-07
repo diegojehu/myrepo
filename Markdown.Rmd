@@ -74,7 +74,7 @@ Using the objects define above, we now call the datasource with SAS output to cr
 2. We then create `RR_1<-RR` if `RR< 1` (*i.e. those with negative associations*), else `RR_1<-1`.   
 3. We also then create `RR_2<-RR` if `RR>1` (*i.e. those with positive associations*), else `RR_2<-1`.    
 
-```{r code2, echo=TRUE, message=FALSE, warning=FALSE, tidy=TRUE}
+```{r code2, echo=TRUE, message=FALSE, warning=FALSE}
 
 datasub <<- read.csv(paste("", ROOTDIR ,"data\\",PREFIX,"_",OUTCOME,"_",GROUP,".csv", sep=""), skip=0, header=TRUE)
 
@@ -200,7 +200,7 @@ CEX <- (8)
 We decided to use the png graphic device, but others such as pdf or tiff do the trick as well.  
 1. The line we would use produces a filename that includes the `file.out` substring defined above as well as `GROUP` and the date.  
 2. For this document, have named the output file `"foo.png"`.  
-```{r code7, echo=TRUE, message=FALSE, warning=FALSE, eval=FALSE, tidy=TRUE}
+```{r code7, echo=TRUE, message=FALSE, warning=FALSE, eval=FALSE}
 # 1.
 #png(paste("",ROOTDIR,"tables and figures\\" , file.out ," " , GROUP ," ", format(Sys.time(), " %Y-%m-%d"), " .png", sep=""), height=6000,width=6000, bg = "white")
 # 2.
