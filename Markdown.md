@@ -16,6 +16,32 @@ goes as follows:
 | ----------- | ------------ | -------- | ------ | --------- |
 | 1           | XXL\_VLDL\_P | 0.3709   | 0.0358 | 107.6032  |
 
+    ##   [1] XXL_VLDL_P  XL_VLDL_P   L_VLDL_P    M_VLDL_P    S_VLDL_P    XS_VLDL_P  
+    ##   [7] IDL_P       L_LDL_P     M_LDL_P     S_LDL_P     XL_HDL_P    L_HDL_P    
+    ##  [13] M_HDL_P     S_HDL_P     XXL_VLDL_C  XL_VLDL_C   L_VLDL_C    M_VLDL_C   
+    ##  [19] S_VLDL_C    XS_VLDL_C   IDL_C       L_LDL_C     M_LDL_C     S_LDL_C    
+    ##  [25] XL_HDL_C    L_HDL_C     M_HDL_C     S_HDL_C     XXL_VLDL_FC XL_VLDL_FC 
+    ##  [31] L_VLDL_FC   M_VLDL_FC   S_VLDL_FC   XS_VLDL_FC  IDL_FC      L_LDL_FC   
+    ##  [37] M_LDL_FC    S_LDL_FC    XL_HDL_FC   L_HDL_FC    M_HDL_FC    S_HDL_FC   
+    ##  [43] XXL_VLDL_CE XL_VLDL_CE  L_VLDL_CE   M_VLDL_CE   S_VLDL_CE   XS_VLDL_CE 
+    ##  [49] IDL_CE      L_LDL_CE    M_LDL_CE    S_LDL_CE    XL_HDL_CE   L_HDL_CE   
+    ##  [55] M_HDL_CE    S_HDL_CE    XXL_VLDL_TG XL_VLDL_TG  L_VLDL_TG   M_VLDL_TG  
+    ##  [61] S_VLDL_TG   XS_VLDL_TG  IDL_TG      L_LDL_TG    M_LDL_TG    S_LDL_TG   
+    ##  [67] XL_HDL_TG   L_HDL_TG    M_HDL_TG    S_HDL_TG    XXL_VLDL_PL XL_VLDL_PL 
+    ##  [73] L_VLDL_PL   M_VLDL_PL   S_VLDL_PL   XS_VLDL_PL  IDL_PL      L_LDL_PL   
+    ##  [79] M_LDL_PL    S_LDL_PL    XL_HDL_PL   L_HDL_PL    M_HDL_PL    S_HDL_PL   
+    ##  [85] XXL_VLDL_L  XL_VLDL_L   L_VLDL_L    M_VLDL_L    S_VLDL_L    XS_VLDL_L  
+    ##  [91] IDL_L       L_LDL_L     M_LDL_L     S_LDL_L     XL_HDL_L    L_HDL_L    
+    ##  [97] M_HDL_L     S_HDL_L     VLDL_D      LDL_D       HDL_D       ApoA1      
+    ## [103] ApoB        ApoB_ApoA1  PUFA        MUFA        SFA         DHA        
+    ## [109] LA          FAw3        FAw6        TotFA       PUFA_FA     MUFA_FA    
+    ## [115] SFA_FA      DHA_FA      LA_FA       FAw3_FA     FAw6_FA     TotCho     
+    ## [121] PC          SM          Lac         Cit         Glc         Ala        
+    ## [127] Gln         His         Ile         Leu         Val         Phe        
+    ## [133] Tyr         Ace         AcAce       bOHBut      Alb         Crea_n     
+    ## [139] Gp         
+    ## 139 Levels: AcAce Ace Ala Alb ApoA1 ApoB ApoB_ApoA1 bOHBut Cit Crea_n ... XXL_VLDL_TG
+
 **NOTE:** to keep the y-axis in the log-scale (to preserve the estimates
 in symmetrical and proportional distance from the null-hypothesis),
 parameters are (perhaps sometimes unsatisfactorily) constantly log
@@ -247,10 +273,9 @@ generates the png file.
 
 ``` r
 # 1.
-#FILENAME <- paste("",ROOTDIR,"tables and figures\\" , file.out ," " , GROUP ," ", format(Sys.time(), " %Y-%m-%d"), " .png", sep="")
-
+#png(paste("",ROOTDIR,"tables and figures\\" , file.out ," " , GROUP ," ", format(Sys.time(), " %Y-%m-%d"), " .png", sep=""), height=6000,width=6000, bg = "white")
 # 2.
-name <- params$FILENAME
+name <- "foo.png"
 png(filename = name, height=6000,width=6000, bg = "white")
 
 #png("1.png", height=6000,width=6000, bg = "white")
@@ -417,19 +442,14 @@ circos.track(track.index = 1, bg.border = "white", factors = fact, ylim = YLIM
              
 )
 
-#text(0, 0, paste("Increase or decrease in odds\n ", file.out ,"\nper 1-SD higher\nbiomarker", sep = ""), cex = CEX*1.1, font=2)
 text(0, 0, paste("Increase or decrease in\nodds of incident diabetes\nassociated with 1SD\nhigher levels of each\nNMR-biomarker"), cex = CEX*1.1, font=2)
-```
 
-![](Markdown_files/figure-gfm/code8-1.png)<!-- -->
-
-``` r
 circos.clear()  
 
 dev.off()
 ```
 
     ## png 
-    ##   3
+    ##   2
 
-![Figure 1.](1.png)
+![Figure 1.](foo.png)
