@@ -608,19 +608,3 @@ dev.off()
     ## png 
     ##   2
 
-### Figure 1. The NMR metabolic signature associated with incidence of diabetes.
-
-  - **Analyses include \~5k who had:**
-      - Baseline NMR measures, AND  
-      - Were resurveyed
-  - **Analyses exclude \~1k who were:**
-      - Aged ≥85 years at recruitment  
-      - Had diagnosed or undiagnosed diabetes at baseline
-  - **Incident diabetes was defined as:**
-      - Diagnosed or undiagnosed diabetes at resurvey
-  - **Logistic regression adjusted for:**
-      - Age-group at baseline, sex, district of residence, educational
-        level, fasting duration, and NMR experiment batch number
-      - Significance level was adjusted for false discovery rate at 5%
-
-![](foo.png)
