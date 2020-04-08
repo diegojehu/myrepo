@@ -1,15 +1,11 @@
 ---
 title: "The Wheel"
 author: "Diego Aguilar-Ramirez"
-date: "06/04/2020"
-output:
-  github_document: default
-  html_document:
-    keep_md: yes
+date: "`r format(Sys.Date())`"
+output: pdf_document
 params:
-  ROOTDIR: !r ROOTDIR <- "C:\\Users\\Diego\\Desktop\\NDPH\\Nested case-control study\\"
+  ROOTDIR: !r ROOTDIR <- "C:\\Users\\diegoa\\Documents\\NDPH\\Nested case-control study\\"
 ---
-
 
 The following script produces a circular plot showing associations between NMR measured biomarkers and an outcome of interest (in this example, incident diabetes). These associations can be product of any generalised linear model that is of relevance for epidemiology such as linear regression, logistic regression, or Cox regression.  
 
